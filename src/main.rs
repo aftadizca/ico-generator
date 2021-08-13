@@ -6,7 +6,6 @@ extern crate glob;
 extern crate image;
 extern crate rust_embed;
 mod constant;
-use constant::MIDDLE_IMG as MIDDLE;
 
 //rust-embed
 use rust_embed::RustEmbed;
@@ -14,7 +13,9 @@ use rust_embed::RustEmbed;
 #[folder = "src/img/"]
 struct Asset;
 
+use constant::MIDDLE_IMG as MIDDLE;
 use glob::glob;
+use hyper::Client;
 use image::io::Reader as ImageReader;
 use image::{GenericImage, GenericImageView, ImageBuffer, ImageDecoder, RgbImage};
 use std::boxed::Box;
@@ -23,29 +24,26 @@ use std::path::Path;
 use std::vec::Vec;
 
 fn main() -> Result<(), Box<dyn Error>> {
-    for i in search_anime_folder("")? {
-        println!("{}", i)
-    }
+    create_anime_folder("")?;
     // process_image("src/img/test.jpg", "test2.ico")?;
     Ok(())
 }
 
-fn search_anime_folder(folder: &str) -> Result<Vec<String>, Box<dyn Error>> {
+fn create_anime_folder(folder: &str) -> Result<(), Box<dyn Error>> {
     let folder = "/mnt/d/KOLEKSI/NEWANIME/*/";
-    let mut result = Vec::new();
     for entry in glob(folder).unwrap() {
         match entry {
             Ok(p) => {
                 let path_ico = Path::new(p.as_path().to_str().unwrap()).join("a.ico");
                 let path_jpg = Path::new(p.as_path().to_str().unwrap()).join("icon.jpg");
                 if path_ico.exists() && !path_jpg.exists() && !p.as_path().ends_with("1. new") {
-                    result.push(p.as_path().to_str().unwrap().to_string());
+                    println!("{}", p.as_path().file_name().unwrap().to_str().unwrap());
                 }
             }
             Err(e) => println!("{:?}", e),
         }
     }
-    Ok(result)
+    Ok(())
 }
 
 fn process_image(path: &str, out_path: &str) -> Result<(), Box<dyn Error>> {
@@ -65,5 +63,12 @@ fn process_image(path: &str, out_path: &str) -> Result<(), Box<dyn Error>> {
     image::imageops::overlay(&mut bottom_asset, &top_asset, 0, 0);
     //save image
     bottom_asset.save_with_format(out_path, image::ImageFormat::Ico)?;
+    Ok(())
+}
+
+#[tokio::main]
+async fn get_img_from_anilist() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+    // This is where we will setup our HTTP client requests.
+
     Ok(())
 }
