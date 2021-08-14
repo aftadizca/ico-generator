@@ -1,5 +1,3 @@
-pub const IMG_SIZE: u32 = 256;
-
 pub mod middle_img {
     pub const W: u32 = 149;
     pub const H: u32 = 211;
@@ -18,4 +16,5 @@ pub mod anilist {
             }
         }
         ";
+    pub const URL: &str = "https://graphql.anilist.co/";
 }
