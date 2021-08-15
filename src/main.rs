@@ -24,8 +24,8 @@ use std::path::Path;
 
 fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     // get_img_from_anilist("AnoHana")?;
-    // create_anime_folder(std::env::current_dir().unwrap().to_str().unwrap());
-    create_anime_folder("/mnt/d/KOLEKSI/NEWANIME");
+    create_anime_folder(std::env::current_dir().unwrap().to_str().unwrap());
+    // create_anime_folder("/mnt/d/KOLEKSI/NEWANIME");
     print!("\nPress Enter to Exit ");
     io::stdout().flush().unwrap();
     let stdin = io::stdin();
@@ -44,7 +44,10 @@ fn create_anime_folder(folder: &str) {
             Ok(p) => {
                 let path_ico = Path::new(p.as_path().to_str().unwrap()).join("a.ico");
                 let path_jpg = Path::new(p.as_path().to_str().unwrap()).join("icon.jpg");
-                if !(path_ico.exists() && path_jpg.exists()) && !p.as_path().ends_with("1. new") {
+                if !(path_ico.exists() && path_jpg.exists())
+                    && !p.as_path().ends_with("1. new")
+                    && !p.as_path().ends_with("$RECYCLE.BIN")
+                {
                     println!("- {}", p.as_path().file_name().unwrap().to_str().unwrap());
                     if !path_jpg.exists() {
                         get_img_from_anilist(
