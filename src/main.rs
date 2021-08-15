@@ -22,7 +22,7 @@ use std::io;
 use std::io::prelude::*;
 use std::path::Path;
 
-fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
+fn main() {
     // get_img_from_anilist("AnoHana")?;
     create_anime_folder(std::env::current_dir().unwrap().to_str().unwrap());
     // create_anime_folder("/mnt/d/KOLEKSI/NEWANIME");
@@ -32,7 +32,6 @@ fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     for _ in stdin.lock().lines() {
         break;
     }
-    Ok(())
 }
 
 fn create_anime_folder(folder: &str) {
