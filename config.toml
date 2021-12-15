@@ -1,0 +1,22 @@
+[path]
+anime = [
+    "D:\\KOLEKSI\\ANIME_NEW",
+]
+exclude = ["1. new", "$RECYCLE.BIN"]
+
+[api]
+query = """
+        query ($search: String){ 
+            Media(search: $search, type:ANIME) { 
+                id 
+                coverImage {
+                    extraLarge
+                }
+            }
+        }
+        """
+url = "https://graphql.anilist.co/"
+
+[img]
+bottom = "src\\img\\bottom.png"
+top = "src\\img\\top.png"

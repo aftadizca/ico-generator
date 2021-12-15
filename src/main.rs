@@ -3,6 +3,7 @@
 // #![allow(dead_code)]
 
 mod constant;
+mod config_parser;
 
 //rust-embed
 use rust_embed::RustEmbed;
@@ -10,6 +11,7 @@ use rust_embed::RustEmbed;
 #[folder = "src/img/"]
 struct Asset;
 
+use config_parser::Config;
 use constant::anilist::{QUERY, URL};
 use constant::middle_img::{H, W, X, Y};
 use glob::glob;
@@ -21,17 +23,45 @@ use std::error::Error;
 use std::io;
 use std::io::prelude::*;
 use std::path::Path;
+// use std::vec::Vec;
+use std::fs;
 
-fn main() {
-    // get_img_from_anilist("AnoHana")?;
-    create_anime_folder(std::env::current_dir().unwrap().to_str().unwrap());
-    // create_anime_folder("/mnt/d/KOLEKSI/NEWANIME");
-    print!("\nPress Enter to Exit ");
-    io::stdout().flush().unwrap();
-    let stdin = io::stdin();
-    for _ in stdin.lock().lines() {
-        break;
+// fn main() {
+//     // get_img_from_anilist("AnoHana")?;
+//     create_anime_folder(std::env::current_dir().unwrap().to_str().unwrap());
+//     // create_anime_folder("/mnt/d/KOLEKSI/NEWANIME");
+//     print!("\nPress Enter to Exit ");
+//     io::stdout().flush().unwrap();
+//     let stdin = io::stdin();
+//     for _ in stdin.lock().lines() {
+//         break;
+//     }
+// }
+
+fn main() -> io::Result<()> {
+
+    let test = get_folder_list()?;
+
+    for x in test{
+        println!("{}",x.display())
     }
+
+    Ok(())
+   
+}
+
+
+fn get_folder_list() -> io::Result<Vec<std::path::PathBuf>> {
+    let file = fs::read_to_string("config.toml")?;
+    let config: Config = toml::from_str(&file)?;
+
+    let mut paths: Vec<_> = fs::read_dir(config.path.anime[0].to_string())?.filter(|a| a.as_ref().unwrap().path().as_path().is_dir()).map(|a| a.unwrap().path()).collect();
+    //filtering path 
+    let exclude = config.path.exclude;
+    for exc in &exclude{
+        paths.retain(|a| !a.as_path().ends_with(exc));
+    }
+    Ok(paths)
 }
 
 fn create_anime_folder(folder: &str) {
