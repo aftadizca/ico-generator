@@ -52,21 +52,20 @@ fn create_anime_folder(config: &Config) -> io::Result<()> {
         let path_jpg = Path::new(p.as_path().to_str().unwrap()).join("icon.jpg");
         if !(path_ico.exists() && path_jpg.exists()) {
             println!("- {}", p.as_path().file_name().unwrap().to_str().unwrap());
+            println!("{}",path_jpg.exists());
             if !path_jpg.exists() {
                 get_img_from_anilist(
                     p.as_path().file_name().unwrap().to_str().unwrap(),
                     p.as_path().to_str().unwrap(),
                     config
-                )
-                .unwrap();
+                ).unwrap();
             }
             found = true;
             process_image(
                 path_jpg.to_str().unwrap(),
                 path_ico.to_str().unwrap(),
                 config,
-            )
-            .unwrap()
+            ).expect("Error processing image");
         }
     }
     if !found {
@@ -82,8 +81,8 @@ fn process_image(path: &str, out_path: &str, config: &Config) -> Result<(), Box<
     let bottom_asset = config.img.bottom.to_string();
     let middle_asset = image::open(path)?;
     //load image
-    let top_asset = image::load_from_memory(top_asset.as_ref())?;
-    let mut bottom_asset = image::load_from_memory(bottom_asset.as_ref())?;
+    let top_asset = image::open(top_asset)?;
+    let mut bottom_asset = image::open(bottom_asset)?;
     //resizing middle image
     let middle_asset = middle_asset.resize_exact(W, H, image::imageops::FilterType::Lanczos3);
     //stacking bottom & middle img

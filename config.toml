@@ -2,7 +2,7 @@
 anime = [
     "D:\\KOLEKSI\\ANIME_NEW",
 ]
-exclude = ["1. new", "$RECYCLE.BIN"]
+exclude = ["1. new","2. IconGenerator", "$RECYCLE.BIN"]
 
 [api]
 query = """
