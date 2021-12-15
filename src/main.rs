@@ -52,7 +52,6 @@ fn create_anime_folder(config: &Config) -> io::Result<()> {
         let path_jpg = Path::new(p.as_path().to_str().unwrap()).join("icon.jpg");
         if !(path_ico.exists() && path_jpg.exists()) {
             println!("- {}", p.as_path().file_name().unwrap().to_str().unwrap());
-            println!("{}",path_jpg.exists());
             if !path_jpg.exists() {
                 get_img_from_anilist(
                     p.as_path().file_name().unwrap().to_str().unwrap(),
