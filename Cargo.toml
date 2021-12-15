@@ -9,8 +9,6 @@ authors = ["Afta Dizca Wahana"]
 [dependencies]
 toml = "0.5.8"
 image = "0.23.14"
-rust-embed = "6.0.0"
-glob = "0.3.0"
 tokio = { version = "1", features = ["full"] }
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0.66"

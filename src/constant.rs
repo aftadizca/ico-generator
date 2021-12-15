@@ -4,17 +4,3 @@ pub mod middle_img {
     pub const X: u32 = 31;
     pub const Y: u32 = 16;
 }
-
-pub mod anilist {
-    pub const QUERY: &str = "
-        query ($search: String){ 
-            Media(search: $search, type:ANIME) { 
-                id 
-                coverImage {
-                    extraLarge
-                }
-            }
-        }
-        ";
-    pub const URL: &str = "https://graphql.anilist.co/";
-}
