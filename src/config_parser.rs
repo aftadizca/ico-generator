@@ -22,5 +22,6 @@ pub struct Api {
 #[derive(Deserialize)]
 pub struct Img {
     pub top: String,
-    pub bottom: String
+    pub bottom: String,
+    pub coordinate: Vec<u32>
 }

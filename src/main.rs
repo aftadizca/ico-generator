@@ -1,12 +1,7 @@
-// #![allow(unused_imports)]
-// #![allow(unused_variables)]
-// #![allow(dead_code)]
-
 mod config_parser;
 mod constant;
 
 use config_parser::Config;
-use constant::middle_img::{H, W, X, Y};
 use reqwest::Client;
 use serde_json::json;
 use std::boxed::Box;
@@ -16,12 +11,15 @@ use std::io;
 use std::io::prelude::*;
 use std::path::Path;
 
+use terminal_spinners::{SpinnerBuilder, DOTS12};
+
 fn main() -> io::Result<()> {
-    let file = fs::read_to_string("config.toml")?;
-    let config: Config = toml::from_str(&file)?;
+    let file = fs::read_to_string("config.toml").expect("config.toml not found");
+    let config: Config = toml::from_str(&file).expect("failed to read config.toml");
 
     create_anime_folder(&config)?;
-    print!("\nPress Enter to Exit ");
+
+    print!("\nPress Enter to exit ");
     io::stdout().flush().unwrap();
     let stdin = io::stdin();
     for _ in stdin.lock().lines() {
@@ -44,33 +42,40 @@ fn get_folder_list(config: &Config) -> io::Result<Vec<std::path::PathBuf>> {
 }
 
 fn create_anime_folder(config: &Config) -> io::Result<()> {
-    let mut found = false;
     let folder_list = get_folder_list(config)?;
     println!("");
+    println!("Found {} folders\n", folder_list.len());
     for p in folder_list {
         let path_ico = Path::new(p.as_path().to_str().unwrap()).join("a.ico");
         let path_jpg = Path::new(p.as_path().to_str().unwrap()).join("icon.jpg");
+
+        let handle = SpinnerBuilder::new()
+            .spinner(&DOTS12)
+            .text(format!(
+                " {}",
+                p.as_path().file_name().unwrap().to_str().unwrap()
+            ))
+            .start();
+
         if !(path_ico.exists() && path_jpg.exists()) {
-            println!("- {}", p.as_path().file_name().unwrap().to_str().unwrap());
+            // println!("- {}", p.as_path().file_name().unwrap().to_str().unwrap());
             if !path_jpg.exists() {
                 get_img_from_anilist(
                     p.as_path().file_name().unwrap().to_str().unwrap(),
                     p.as_path().to_str().unwrap(),
-                    config
-                ).unwrap();
+                    config,
+                )
+                .unwrap();
             }
-            found = true;
             process_image(
                 path_jpg.to_str().unwrap(),
                 path_ico.to_str().unwrap(),
                 config,
-            ).expect("Error processing image");
+            )
+            .expect("Error processing image");
         }
+        handle.done();
     }
-    if !found {
-        println!("All folder already have icon")
-    }
-
     Ok(())
 }
 
@@ -83,9 +88,18 @@ fn process_image(path: &str, out_path: &str, config: &Config) -> Result<(), Box<
     let top_asset = image::open(top_asset)?;
     let mut bottom_asset = image::open(bottom_asset)?;
     //resizing middle image
-    let middle_asset = middle_asset.resize_exact(W, H, image::imageops::FilterType::Lanczos3);
+    let middle_asset = middle_asset.resize_exact(
+        config.img.coordinate[0], // W
+        config.img.coordinate[1], // H
+        image::imageops::FilterType::Lanczos3,
+    );
     //stacking bottom & middle img
-    image::imageops::overlay(&mut bottom_asset, &middle_asset, X, Y);
+    image::imageops::overlay(
+        &mut bottom_asset,
+        &middle_asset,
+        config.img.coordinate[2], // X
+        config.img.coordinate[3], // Y
+    );
     //stacking bottom & top img
     image::imageops::overlay(&mut bottom_asset, &top_asset, 0, 0);
     //save image
@@ -97,7 +111,7 @@ fn process_image(path: &str, out_path: &str, config: &Config) -> Result<(), Box<
 async fn get_img_from_anilist(
     title: &str,
     output_path: &str,
-    config:&Config
+    config: &Config,
 ) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     let client = Client::new();
     let json = json!({"query": config.api.query.to_string(), "variables": {"search": title}});
