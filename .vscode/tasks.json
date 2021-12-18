@@ -1,0 +1,23 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"label": "cargo release npx",
+			"type": "shell",
+			"group": "build",
+			"windows":{
+				"command": "cargo build --release | E:\\App\\upx-3.96-win64\\upx.exe --best --lzma ${workspaceFolder}\\target\\release\\ico-generator.exe"
+			},
+			
+		},
+		{
+			"type": "cargo",
+			"subcommand": "build",
+			"problemMatcher": [
+				"$rustc"
+			],
+			"group": "build",
+			"label": "Rust: cargo build - ico-generator"
+		}
+	]
+}

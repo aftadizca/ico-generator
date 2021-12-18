@@ -1,5 +1,4 @@
 mod config_parser;
-mod constant;
 
 use config_parser::Config;
 use reqwest::Client;
@@ -11,7 +10,7 @@ use std::io;
 use std::io::prelude::*;
 use std::path::Path;
 
-use terminal_spinners::{SpinnerBuilder, DOTS12};
+use terminal_spinners::{SpinnerBuilder, POINT};
 
 fn main() -> io::Result<()> {
     let file = fs::read_to_string("config.toml").expect("config.toml not found");
@@ -50,7 +49,7 @@ fn create_anime_folder(config: &Config) -> io::Result<()> {
         let path_jpg = Path::new(p.as_path().to_str().unwrap()).join("icon.jpg");
 
         let handle = SpinnerBuilder::new()
-            .spinner(&DOTS12)
+            .spinner(&POINT)
             .text(format!(
                 " {}",
                 p.as_path().file_name().unwrap().to_str().unwrap()
