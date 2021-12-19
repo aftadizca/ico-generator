@@ -8,6 +8,9 @@
 			"windows":{
 				"command": "cargo build --release | E:\\App\\upx-3.96-win64\\upx.exe --best --lzma ${workspaceFolder}\\target\\release\\ico-generator.exe"
 			},
+			"linux":{
+				"command": "cargo build --release --target x86_64-pc-windows-gnu && upx --best --lzma ${workspaceFolder}/target/x86_64-pc-windows-gnu/release/ico-generator.exe"
+			},
 			
 		},
 		{

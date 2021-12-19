@@ -1,6 +1,6 @@
 [path]
 anime = [
-    "D:\\KOLEKSI\\ANIME_NEW",
+    "/mnt/d/KOLEKSI/ANIME_NEW",
 ]
 exclude = ["1. new","2. IconGenerator", "$RECYCLE.BIN"]
 
@@ -18,8 +18,8 @@ query = """
 url = "https://graphql.anilist.co/"
 
 [img]
-# example : "src\\img\\bottom.png"
-bottom = "src\\img\\bottom.png"
-top = "src\\img\\top.png"
+# example : "src/img/bottom.png"
+bottom = "src/img/bottom.png"
+top = "src/img/top.png"
 # [W,H,X,Y]
 coordinate=[149,211,31,16]

@@ -10,9 +10,49 @@ use std::io;
 use std::io::prelude::*;
 use std::path::Path;
 
+use log::{error , LevelFilter};
+use log4rs::encode::pattern::PatternEncoder;
+use log4rs::config::{Appender, Config as LogConfig, Logger, Root};
+use log4rs::append::rolling_file::policy::compound::roll::fixed_window::FixedWindowRoller;
+use log4rs::append::rolling_file::policy::compound::trigger::size::SizeTrigger;
+use log4rs::append::rolling_file::policy::compound::CompoundPolicy;
+use log4rs::filter::threshold::ThresholdFilter;
+use log4rs::append::rolling_file::RollingFileAppender;
+
+
 use terminal_spinners::{SpinnerBuilder, POINT};
 
 fn main() -> io::Result<()> {
+
+    let window_size = 0; // log0, log1, log2
+    let fixed_window_roller = 
+    FixedWindowRoller::builder().build("log.{}",window_size).unwrap();
+    let size_limit = 5 * 1024; // 5KB as max log file size to roll
+    let size_trigger = SizeTrigger::new(size_limit);
+    let compound_policy = CompoundPolicy::new(Box::new(size_trigger),Box::new(fixed_window_roller));
+
+    let config = LogConfig::builder()
+    .appender(
+        Appender::builder()
+            .filter(Box::new(ThresholdFilter::new(LevelFilter::Error)))
+            .build(
+                "log",
+                Box::new(
+                    RollingFileAppender::builder()
+                        .encoder(Box::new(PatternEncoder::new("{d} {l}::{m}{n}")))
+                        .build("log", Box::new(compound_policy))?,
+                ),
+            ),
+    )
+    .build(
+        Root::builder()
+            .appender("log")
+            .build(LevelFilter::Error),
+    ).unwrap();
+
+    let _handle = log4rs::init_config(config).unwrap();
+
+    
     let file = fs::read_to_string("config.toml").expect("config.toml not found");
     let config: Config = toml::from_str(&file).expect("failed to read config.toml");
 
