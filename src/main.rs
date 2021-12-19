@@ -81,7 +81,7 @@ fn create_anime_folder(config: &Config) {
             ))
             .start();
 
-        if !(path_ico.exists() && path_jpg.exists()) || true{
+        if !(path_ico.exists() && path_jpg.exists()) {
             // println!("- {}", p.as_path().file_name().unwrap().to_str().unwrap());
             if !path_jpg.exists() {
                 match get_img_from_anilist(
