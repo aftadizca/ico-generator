@@ -2,6 +2,7 @@ mod config_parser;
 mod logger;
 
 use config_parser::Config;
+use log::error;
 use reqwest::Client;
 use serde_json::json;
 use std::boxed::Box;
@@ -10,58 +11,30 @@ use std::fs;
 use std::io;
 use std::io::prelude::*;
 use std::path::Path;
-use log::{error};
-// use log4rs::encode::pattern::PatternEncoder;
-// use log4rs::config::{Appender, Config as LogConfig, Root};
-// use log4rs::append::rolling_file::policy::compound::roll::fixed_window::FixedWindowRoller;
-// use log4rs::append::rolling_file::policy::compound::trigger::size::SizeTrigger;
-// use log4rs::append::rolling_file::policy::compound::CompoundPolicy;
-// use log4rs::filter::threshold::ThresholdFilter;
-// use log4rs::append::rolling_file::RollingFileAppender;
-
 
 use terminal_spinners::{SpinnerBuilder, POINT};
 
 fn main() -> io::Result<()> {
-
-    // let window_size = 0; // log0, log1, log2
-    // let fixed_window_roller = 
-    // FixedWindowRoller::builder().build("log.{}",window_size).unwrap();
-    // let size_limit = 5 * 1024; // 5KB as max log file size to roll
-    // let size_trigger = SizeTrigger::new(size_limit);
-    // let compound_policy = CompoundPolicy::new(Box::new(size_trigger),Box::new(fixed_window_roller));
-
-    // let config = LogConfig::builder()
-    // .appender(
-    //     Appender::builder()
-    //         .filter(Box::new(ThresholdFilter::new(LevelFilter::Error)))
-    //         .build(
-    //             "log",
-    //             Box::new(
-    //                 RollingFileAppender::builder()
-    //                     .encoder(Box::new(PatternEncoder::new("{d} {l}::{m}{n}")))
-    //                     .build("log", Box::new(compound_policy))?,
-    //             ),
-    //         ),
-    // )
-    // .build(
-    //     Root::builder()
-    //         .appender("log")
-    //         .build(LevelFilter::Error),
-    // ).unwrap();
-
-    // let _handle = log4rs::init_config(config).unwrap();
     //call logger
-    logger::my_log::create_logging(0,5*1024,"log");
+    logger::my_log::create_logging(0, 5 * 1024, "log");
 
-    for _ in 1..1000{
-        error!("test");
-    }
+    let file = match fs::read_to_string("config.toml") {
+        Ok(f) => f,
+        Err(_) => {
+            error!("config.toml not found!");
+            std::process::exit(0);
+        }
+    };
 
-    let file = fs::read_to_string("config.toml").expect("config.toml not found");
-    let config: Config = toml::from_str(&file).expect("failed to read config.toml");
+    let config: Config = match toml::from_str(&file) {
+        Ok(f) => f,
+        Err(_) => {
+            error!("Cant read config.toml");
+            std::process::exit(0);
+        }
+    };
 
-    create_anime_folder(&config)?;
+    create_anime_folder(&config);
 
     print!("\nPress Enter to exit ");
     io::stdout().flush().unwrap();
@@ -74,19 +47,26 @@ fn main() -> io::Result<()> {
 }
 
 fn get_folder_list(config: &Config) -> io::Result<Vec<std::path::PathBuf>> {
+    // get all folder list
     let mut paths: Vec<_> = fs::read_dir(config.path.anime[0].to_string())?
         .filter(|a| a.as_ref().unwrap().path().as_path().is_dir())
         .map(|a| a.unwrap().path())
         .collect();
-    //filtering path
+    //filtering folder
     for exc in &config.path.exclude {
         paths.retain(|a| !a.as_path().ends_with(exc));
     }
     Ok(paths)
 }
 
-fn create_anime_folder(config: &Config) -> io::Result<()> {
-    let folder_list = get_folder_list(config)?;
+fn create_anime_folder(config: &Config){
+    let folder_list = match get_folder_list(config) {
+        Ok(f) => f,
+        Err(_) => {
+            error!("Failed to get anime folder list");
+            std::process::exit(0);
+        }
+    };
     println!("");
     println!("Found {} folders\n", folder_list.len());
     for p in folder_list {
@@ -104,23 +84,31 @@ fn create_anime_folder(config: &Config) -> io::Result<()> {
         if !(path_ico.exists() && path_jpg.exists()) {
             // println!("- {}", p.as_path().file_name().unwrap().to_str().unwrap());
             if !path_jpg.exists() {
-                get_img_from_anilist(
+                match get_img_from_anilist(
                     p.as_path().file_name().unwrap().to_str().unwrap(),
                     p.as_path().to_str().unwrap(),
                     config,
-                )
-                .unwrap();
+                ){
+                    Ok(f) => f,
+                    Err(_) => {
+                        error!("Failed get image from server");
+                        std::process::exit(0);
+                    }
             }
-            process_image(
+            match process_image(
                 path_jpg.to_str().unwrap(),
                 path_ico.to_str().unwrap(),
                 config,
-            )
-            .expect("Error processing image");
+            ) {
+                Ok(f) => f,
+                Err(_) => {
+                    error!("Failed processing image");
+                    std::process::exit(0);
+                }
+            }
         }
         handle.done();
     }
-    Ok(())
 }
 
 fn process_image(path: &str, out_path: &str, config: &Config) -> Result<(), Box<dyn Error>> {
