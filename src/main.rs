@@ -59,7 +59,7 @@ fn get_folder_list(config: &Config) -> io::Result<Vec<std::path::PathBuf>> {
     Ok(paths)
 }
 
-fn create_anime_folder(config: &Config){
+fn create_anime_folder(config: &Config) {
     let folder_list = match get_folder_list(config) {
         Ok(f) => f,
         Err(_) => {
@@ -81,19 +81,20 @@ fn create_anime_folder(config: &Config){
             ))
             .start();
 
-        if !(path_ico.exists() && path_jpg.exists()) {
+        if !(path_ico.exists() && path_jpg.exists()) || true{
             // println!("- {}", p.as_path().file_name().unwrap().to_str().unwrap());
             if !path_jpg.exists() {
                 match get_img_from_anilist(
                     p.as_path().file_name().unwrap().to_str().unwrap(),
                     p.as_path().to_str().unwrap(),
                     config,
-                ){
+                ) {
                     Ok(f) => f,
                     Err(_) => {
                         error!("Failed get image from server");
                         std::process::exit(0);
                     }
+                };
             }
             match process_image(
                 path_jpg.to_str().unwrap(),
@@ -105,7 +106,7 @@ fn create_anime_folder(config: &Config){
                     error!("Failed processing image");
                     std::process::exit(0);
                 }
-            }
+            };
         }
         handle.done();
     }
@@ -117,8 +118,20 @@ fn process_image(path: &str, out_path: &str, config: &Config) -> Result<(), Box<
     let bottom_asset = config.img.bottom.to_string();
     let middle_asset = image::open(path)?;
     //load image
-    let top_asset = image::open(top_asset)?;
-    let mut bottom_asset = image::open(bottom_asset)?;
+    let top_asset = match image::open(top_asset){
+        Ok(f) => f,
+        Err(_) => {
+            error!("Top image not found");
+            std::process::exit(0);
+        }
+    };
+    let mut bottom_asset = match image::open(bottom_asset){
+        Ok(f) => f,
+        Err(_) => {
+            error!("Bottom image not found");
+            std::process::exit(0);
+        }
+    };
     //resizing middle image
     let middle_asset = middle_asset.resize_exact(
         config.img.coordinate[0], // W
@@ -148,20 +161,25 @@ async fn get_img_from_anilist(
     let client = Client::new();
     let json = json!({"query": config.api.query.to_string(), "variables": {"search": title}});
     // Make HTTP post request
-    let resp = client
+    let resp = match client
         .post(config.api.url.to_string())
         .header("Content-Type", "application/json")
         .header("Accept", "application/json")
         .body(json.to_string())
         .send()
-        .await
-        .unwrap()
-        .text()
-        .await;
+        .await {
+            Ok(f) => f.text().await,
+            Err(_) => {
+                error!("Failed get image from server");
+                std::process::exit(0);
+            }
+        };
+        
     // Get json
     let result: serde_json::Value = serde_json::from_str(&resp.unwrap()).unwrap();
     let url_img = result["data"]["Media"]["coverImage"]["extraLarge"].to_owned();
-    // println!("{}", url_img.as_str().unwrap());
+    
+    //downloading image
     let resp = reqwest::get(url_img.as_str().unwrap()).await?;
     let mut content = resp.bytes().await?;
     let img = image::load_from_memory(&mut content)?;
