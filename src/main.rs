@@ -1,16 +1,17 @@
 mod config_parser;
-mod logger;
-mod my_macro;
+// mod logger;
+// mod my_macro;
 
 use config_parser::Config;
-use log::error;
+// use log::error;
 use reqwest::Client;
 use serde_json::json;
 use std::boxed::Box;
 use std::error::Error;
 use std::fs;
 use std::io;
-use std::io::prelude::*;
+use std::io::Write;
+// use chrono::Local;
 use std::path::Path;
 use terminal_spinners::{SpinnerBuilder, POINT};
 
@@ -19,16 +20,25 @@ macro_rules! log_err {
         match $e {
             Ok(val) => val,
             Err(err) => {
-                error!("{}", format!("{} : {}", $msg, err));
+                // let t = Local::now();
+                println!("\n[ERROR] : {}",format!("{} : {}", $msg, err));
+                // eprintln!("\n[{}] [ERROR] : {}", t.format("%Y-%m-%d][%H:%M:%S") ,format!("{} : {}", $msg, err));
+                pause();
                 std::process::exit(0);
             }
         }
     };
 }
 
+fn pause() {
+    print!("\nPress ENTER to exit   ");
+    io::stdout().flush().unwrap();
+    io::stdin().read_line(&mut String::new()).unwrap();
+}
+
 fn main() -> io::Result<()> {
     //call logger
-    logger::my_log::create_logging(0, 5 * 1024, "log");
+    // logger::my_log::create_logging(0, 5 * 1024, "log");
 
     let file = log_err!(fs::read_to_string("config.toml"), "CONFIG.TOML");
     let config: Config = log_err!(toml::from_str(&file), "CONFIG.TOML");
@@ -36,6 +46,7 @@ fn main() -> io::Result<()> {
     create_anime_folder(&config);
 
     println!("\nAll done.\n");
+    pause();
     Ok(())
 }
 
