@@ -31,24 +31,11 @@ fn main() -> io::Result<()> {
     logger::my_log::create_logging(0, 5 * 1024, "log");
 
     let file = log_err!(fs::read_to_string("config.toml"), "CONFIG.TOML");
- 
-    let config: Config = match toml::from_str(&file) {
-        Ok(f) => f,
-        Err(_) => {
-            error!("Cant read config.toml");
-            std::process::exit(0);
-        }
-    };
+    let config: Config = log_err!(toml::from_str(&file), "CONFIG.TOML");
 
     create_anime_folder(&config);
 
-    print!("\nPress Enter to exit ");
-    io::stdout().flush().unwrap();
-    let stdin = io::stdin();
-    for _ in stdin.lock().lines() {
-        break;
-    }
-
+    println!("\nAll done.\n");
     Ok(())
 }
 
@@ -66,13 +53,7 @@ fn get_folder_list(config: &Config) -> io::Result<Vec<std::path::PathBuf>> {
 }
 
 fn create_anime_folder(config: &Config) {
-    let folder_list = match get_folder_list(config) {
-        Ok(f) => f,
-        Err(_) => {
-            error!("Failed to get anime folder list");
-            std::process::exit(0);
-        }
-    };
+    let folder_list = log_err!(get_folder_list(config), "Folder List");
     println!("");
     println!("Found {} folders\n", folder_list.len());
     for p in folder_list {
@@ -90,29 +71,23 @@ fn create_anime_folder(config: &Config) {
         if !(path_ico.exists() && path_jpg.exists()) {
             // println!("- {}", p.as_path().file_name().unwrap().to_str().unwrap());
             if !path_jpg.exists() {
-                match get_img_from_anilist(
-                    p.as_path().file_name().unwrap().to_str().unwrap(),
-                    p.as_path().to_str().unwrap(),
-                    config,
-                ) {
-                    Ok(f) => f,
-                    Err(_) => {
-                        error!("Failed get image from server");
-                        std::process::exit(0);
-                    }
-                };
+                log_err!(
+                    get_img_from_anilist(
+                        p.as_path().file_name().unwrap().to_str().unwrap(),
+                        p.as_path().to_str().unwrap(),
+                        config,
+                    ),
+                    "Image"
+                );
             }
-            match process_image(
-                path_jpg.to_str().unwrap(),
-                path_ico.to_str().unwrap(),
-                config,
-            ) {
-                Ok(f) => f,
-                Err(_) => {
-                    error!("Failed processing image");
-                    std::process::exit(0);
-                }
-            };
+            log_err!(
+                process_image(
+                    path_jpg.to_str().unwrap(),
+                    path_ico.to_str().unwrap(),
+                    config,
+                ),
+                "Image"
+            );
         }
         handle.done();
     }
@@ -124,20 +99,8 @@ fn process_image(path: &str, out_path: &str, config: &Config) -> Result<(), Box<
     let bottom_asset = config.img.bottom.to_string();
     let middle_asset = image::open(path)?;
     //load image
-    let top_asset = match image::open(top_asset) {
-        Ok(f) => f,
-        Err(_) => {
-            error!("Top image not found");
-            std::process::exit(0);
-        }
-    };
-    let mut bottom_asset = match image::open(bottom_asset) {
-        Ok(f) => f,
-        Err(_) => {
-            error!("Bottom image not found");
-            std::process::exit(0);
-        }
-    };
+    let top_asset = log_err!(image::open(top_asset),"Top Image");
+    let mut bottom_asset = log_err!(image::open(bottom_asset),"Bottom Image");
     //resizing middle image
     let middle_asset = middle_asset.resize_exact(
         config.img.coordinate[0], // W
@@ -167,20 +130,13 @@ async fn get_img_from_anilist(
     let client = Client::new();
     let json = json!({"query": config.api.query.to_string(), "variables": {"search": title}});
     // Make HTTP post request
-    let resp = match client
+    let resp = log_err!(client
         .post(config.api.url.to_string())
         .header("Content-Type", "application/json")
         .header("Accept", "application/json")
         .body(json.to_string())
         .send()
-        .await
-    {
-        Ok(f) => f.text().await,
-        Err(_) => {
-            error!("Failed get image from server");
-            std::process::exit(0);
-        }
-    };
+        .await,"Get Image").text().await;
     // Get json
     let result: serde_json::Value = serde_json::from_str(&resp.unwrap()).unwrap();
     let url_img = result["data"]["Media"]["coverImage"]["extraLarge"].to_owned();
