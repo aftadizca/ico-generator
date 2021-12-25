@@ -1,5 +1,6 @@
 mod config_parser;
 mod logger;
+mod my_macro;
 
 use config_parser::Config;
 use log::error;
@@ -11,21 +12,26 @@ use std::fs;
 use std::io;
 use std::io::prelude::*;
 use std::path::Path;
-
 use terminal_spinners::{SpinnerBuilder, POINT};
+
+macro_rules! log_err {
+    ($e:expr, $msg:expr) => {
+        match $e {
+            Ok(val) => val,
+            Err(err) => {
+                error!("{}", format!("{} : {}", $msg, err));
+                std::process::exit(0);
+            }
+        }
+    };
+}
 
 fn main() -> io::Result<()> {
     //call logger
     logger::my_log::create_logging(0, 5 * 1024, "log");
 
-    let file = match fs::read_to_string("config.toml") {
-        Ok(f) => f,
-        Err(_) => {
-            error!("config.toml not found!");
-            std::process::exit(0);
-        }
-    };
-
+    let file = log_err!(fs::read_to_string("config.toml"), "CONFIG.TOML");
+ 
     let config: Config = match toml::from_str(&file) {
         Ok(f) => f,
         Err(_) => {
@@ -118,14 +124,14 @@ fn process_image(path: &str, out_path: &str, config: &Config) -> Result<(), Box<
     let bottom_asset = config.img.bottom.to_string();
     let middle_asset = image::open(path)?;
     //load image
-    let top_asset = match image::open(top_asset){
+    let top_asset = match image::open(top_asset) {
         Ok(f) => f,
         Err(_) => {
             error!("Top image not found");
             std::process::exit(0);
         }
     };
-    let mut bottom_asset = match image::open(bottom_asset){
+    let mut bottom_asset = match image::open(bottom_asset) {
         Ok(f) => f,
         Err(_) => {
             error!("Bottom image not found");
@@ -167,18 +173,17 @@ async fn get_img_from_anilist(
         .header("Accept", "application/json")
         .body(json.to_string())
         .send()
-        .await {
-            Ok(f) => f.text().await,
-            Err(_) => {
-                error!("Failed get image from server");
-                std::process::exit(0);
-            }
-        };
-        
+        .await
+    {
+        Ok(f) => f.text().await,
+        Err(_) => {
+            error!("Failed get image from server");
+            std::process::exit(0);
+        }
+    };
     // Get json
     let result: serde_json::Value = serde_json::from_str(&resp.unwrap()).unwrap();
     let url_img = result["data"]["Media"]["coverImage"]["extraLarge"].to_owned();
-    
     //downloading image
     let resp = reqwest::get(url_img.as_str().unwrap()).await?;
     let mut content = resp.bytes().await?;

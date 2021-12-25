@@ -5,3 +5,5 @@
 2021-12-19 23:06:14 - ERROR: Bottom image not found
 2021-12-19 23:06:28 - ERROR: Top image not found
 2021-12-19 23:06:44 - ERROR: Failed to get anime folder list
+2021-12-25 15:53:14 - ERROR: Test : No such file or directory (os error 2)
+2021-12-25 15:58:20 - ERROR: CONFIG.TOML : No such file or directory (os error 2)
