@@ -20,7 +20,12 @@ macro_rules! log_err {
         match $e {
             Ok(val) => val,
             Err(err) => {
+                // print!("{esc}[2J{esc}[1;1H", esc = 27 as char);
                 // let t = Local::now();
+                // panic::set_hook(Box::new(|_| {
+                //     println!("\n[ERROR] : {}",format!("{} : {}", $msg, err.to_string()));
+                // }));
+                // panic!("\n[ERROR] : {}",format!("{} : {}", $msg, err));
                 println!("\n[ERROR] : {}",format!("{} : {}", $msg, err));
                 // eprintln!("\n[{}] [ERROR] : {}", t.format("%Y-%m-%d][%H:%M:%S") ,format!("{} : {}", $msg, err));
                 pause();
@@ -32,7 +37,9 @@ macro_rules! log_err {
 
 fn pause() {
     print!("\nPress ENTER to exit   ");
+    println!();
     io::stdout().flush().unwrap();
+    println!();
     io::stdin().read_line(&mut String::new()).unwrap();
 }
 
@@ -110,8 +117,8 @@ fn process_image(path: &str, out_path: &str, config: &Config) -> Result<(), Box<
     let bottom_asset = config.img.bottom.to_string();
     let middle_asset = image::open(path)?;
     //load image
-    let top_asset = log_err!(image::open(top_asset),"Top Image");
-    let mut bottom_asset = log_err!(image::open(bottom_asset),"Bottom Image");
+    let top_asset = log_err!(image::open(top_asset), "Top Image");
+    let mut bottom_asset = log_err!(image::open(bottom_asset), "Bottom Image");
     //resizing middle image
     let middle_asset = middle_asset.resize_exact(
         config.img.coordinate[0], // W
@@ -141,13 +148,18 @@ async fn get_img_from_anilist(
     let client = Client::new();
     let json = json!({"query": config.api.query.to_string(), "variables": {"search": title}});
     // Make HTTP post request
-    let resp = log_err!(client
-        .post(config.api.url.to_string())
-        .header("Content-Type", "application/json")
-        .header("Accept", "application/json")
-        .body(json.to_string())
-        .send()
-        .await,"Get Image").text().await;
+    let resp = log_err!(
+        client
+            .post(config.api.url.to_string())
+            .header("Content-Type", "application/json")
+            .header("Accept", "application/json")
+            .body(json.to_string())
+            .send()
+            .await,
+        "Get Image"
+    )
+    .text()
+    .await;
     // Get json
     let result: serde_json::Value = serde_json::from_str(&resp.unwrap()).unwrap();
     let url_img = result["data"]["Media"]["coverImage"]["extraLarge"].to_owned();
